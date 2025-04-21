@@ -119,7 +119,11 @@ running the application.
     ```bash
     export DJANGO_SETTINGS_MODULE=order_management.settings.production
     ```
+## Tests
+### Run tests
 
+This prject contains 22 tests.
+You can run test with ```python3 manage.py test``` command.
 
 
 ## API Endpoints

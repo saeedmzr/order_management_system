@@ -74,24 +74,17 @@ class OrderViewSet(viewsets.ModelViewSet):
         }
         """
         try:
-            serialized_data = OrderCreateSerializer(data=request.data)
-            serialized_data.is_valid(raise_exception=True)
-
             order = OrderService.create_order(
                 user=request.user,
-                products_data=serialized_data.validated_data.get("items",[]))
-
+                products_data=request.data.get("items", [])
+            )
             serializer = self.get_serializer(order)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        except ValueError as e:
+        except serializers.ValidationError as e:
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        except Product.DoesNotExist:
-            return Response({'error': 'Invalid product ID'}, status=status.HTTP_400_BAD_REQUEST)
-
         except Exception as e:
             return Response(
                 {'error': 'Order creation failed'},
@@ -100,28 +93,20 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         order = self.get_object()
-        serializer = OrderUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         try:
             updated_order = OrderService.update_order(
                 order=order,
                 user=request.user,
-                data=serializer.validated_data
+                data=request.data
             )
-
-            # Return the updated order
             return Response({
                 'status': updated_order.status,
                 'total_price': updated_order.total_price,
                 'message': 'Order updated successfully'
             }, status=status.HTTP_200_OK)
-
         except PermissionDenied as e:
             return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
-        except ValidationError as e:
+        except serializers.ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Product.DoesNotExist:
-            return Response({'error': 'Invalid product ID'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
