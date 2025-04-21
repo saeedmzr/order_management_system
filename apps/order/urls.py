@@ -5,6 +5,4 @@ from .views import OrderViewSet, OrderFilterView
 
 router = DefaultRouter()
 router.register(r'', OrderViewSet, basename='orders')
-router.register(r'filter', OrderFilterView, basename='order-filter')
-
 urlpatterns = router.urls

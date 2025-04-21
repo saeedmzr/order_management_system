@@ -10,6 +10,8 @@ from .serializers import UserSerializer
 from .services import UserService
 
 
+@extend_schema(tags=['Users Endpoints'])
+
 class UserViewSet(BaseViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
