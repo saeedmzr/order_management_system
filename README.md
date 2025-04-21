@@ -14,7 +14,17 @@ Behold My Django Project!
 
 ## Features
 
-- Fill this part based on your project.
+- *User Authentication* : JWT token-based authentication
+
+- *Role-Based Access Control* : Admin, staff
+
+- *Order Management* : Create, read, update, and delete orders
+
+- *Product Catalog* : Manage products 
+
+- *Validation* : Comprehensive input validation for all operations
+
+- *Documentation* : API documentation using drf-spectacular
 
 ## Prerequisites
 
@@ -29,7 +39,7 @@ Before you begin, ensure you have met the following requirements:
 ### 1. Clone the Repository
 
 ```bash
-git clone [your_repo_url]
+git clone [https://github.com/saeedmzr/order_management_system]
 cd order_management
 ```
 
@@ -44,12 +54,12 @@ source venv/bin/activate
 
 - For development:
     ```bash
-    pip install -r requirements.txt
+    pip install -r requirements/local.txt
     ```
 
 - For production:
     ```bash
-    pip install -r requirements-production.txt
+    pip install -r requirements/production.txt
     ```
 
 ## Environment Variables
@@ -109,3 +119,46 @@ running the application.
     ```bash
     export DJANGO_SETTINGS_MODULE=order_management.settings.production
     ```
+
+
+
+## API Endpoints
+### Authentication
+POST ```/api/auth/login/``` - Obtain JWT tokens
+
+POST ```/api/auth/refresh/``` - Refresh access token
+
+POST ```/api/auth/register/``` - Register new user
+
+### Users
+GET ```/api/users/``` - List users (admin only)
+
+POST ```/api/users/``` - Create user (admin only)
+
+GET ```/api/users/{id}/``` - Retrieve user
+
+PATCH ```/api/users/{id}/``` - Update user
+
+DELETE ```/api/users/{id}/``` - Delete user (admin only)
+
+### Products
+GET ```/api/products/``` - List all products
+
+POST ```/api/products/``` - Create product (admin only)
+
+GET ```/api/products/{id}/``` - Retrieve product
+
+PATCH ```/api/products/{id}/``` - Update product (admin only)
+
+DELETE ```/api/products/{id}/``` - Delete product (admin only)
+
+### Orders
+GET ```/api/orders/``` - List orders (own orders for customers, all for admin)
+
+POST ```/api/orders/``` - Create new order
+
+GET ```/api/orders/{id}/``` - Retrieve order details
+
+PATCH ```/api/orders/{id}/``` - Update order (owner or admin)
+
+DELETE ```/api/orders/{id}/``` - Delete order (owner or admin)
