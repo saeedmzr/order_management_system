@@ -1,10 +1,10 @@
 # orders/serializers.py
 from rest_framework import serializers
 from .models import Order, OrderItem
-from products.serializers import ProductSerializer
-from users.serializers import UserSerializer
 
 from ..product.models import Product
+from ..product.serializers import ProductSerializer
+from ..users.serializers import UserSerializer
 
 
 class OrderItemSerializer(serializers.ModelSerializer):

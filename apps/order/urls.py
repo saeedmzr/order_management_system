@@ -5,7 +5,6 @@ from .views import OrderViewSet, OrderFilterView
 
 router = DefaultRouter()
 router.register(r'', OrderViewSet, basename='orders')
+router.register(r'filter', OrderFilterView, basename='order-filter')
 
-urlpatterns = [
-    path('filter/', OrderFilterView.as_view(), name='order-filter'),
-] + router.urls
+urlpatterns = router.urls
