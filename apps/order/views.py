@@ -1,12 +1,15 @@
 # orders/views.py
-from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiExample
+from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Order, OrderItem
-from .serializers import OrderSerializer, OrderItemSerializer
+from .serializers import OrderSerializer, OrderItemSerializer, OrderCreateSerializer
 from .permissions import IsOrderOwnerOrAdmin
 from .filters import OrderFilter
+from .services import OrderCreationService
+from ..base.responses import Response
 
 
 @extend_schema(tags=['Orders Endpoints'])
@@ -62,19 +65,19 @@ class OrderViewSet(viewsets.ModelViewSet):
         Create a new order with multiple products.
         Expected payload format:
         {
-            "products": [
+            "items": [
                 {"product_id": 1, "quantity": 2},
                 {"product_id": 3, "quantity": 1}
             ]
         }
         """
         try:
-            validated_data = OrderCreateSerializer(data=request.data)
-            validated_data.is_valid(raise_exception=True)
+            serialized_data = OrderCreateSerializer(data=request.data)
+            serialized_data.is_valid(raise_exception=True)
 
             order = OrderCreationService.create_order(
                 user=request.user,
-                products_data=validated_data)
+                products_data=serialized_data.validated_data.get("items",[]))
 
             serializer = self.get_serializer(order)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

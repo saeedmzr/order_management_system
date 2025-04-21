@@ -22,9 +22,14 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderItemCreateSerializer(serializers.ModelSerializer):
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
+    )
     class Meta:
         model = OrderItem
-        fields = ['product', 'quantity']
+        fields = ['product_id', 'quantity']
 
 
 class OrderSerializer(serializers.ModelSerializer):

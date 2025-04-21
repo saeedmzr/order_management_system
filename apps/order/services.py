@@ -1,5 +1,5 @@
 from django.db import transaction
-from products.models import Product
+from apps.product.models import Product
 from .models import Order, OrderItem
 
 
@@ -15,7 +15,7 @@ class OrderCreationService:
     @staticmethod
     def process_product_item(item):
         try:
-            product = Product.objects.get(pk=item['product_id'])
+            product = item.get("product",{})
             quantity = int(item['quantity'])
 
             if quantity <= 0:
