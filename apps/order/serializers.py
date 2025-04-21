@@ -1,4 +1,5 @@
 # orders/serializers.py
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from .models import Order, OrderItem
 
@@ -53,9 +54,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['items']
 
+
 class OrderUpdateSerializer(serializers.ModelSerializer):
     items = OrderItemCreateSerializer(many=True, required=False)
-
+    status = serializers.ChoiceField(choices=Order.ORDER_STATUS)
     class Meta:
         model = Order
         fields = ['status', 'items']

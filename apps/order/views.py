@@ -35,7 +35,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filter queryset based on user permissions."""
         user = self.request.user
-        if user.is_staff:
+        if user.is_admin:
             return Order.objects.all()
         return Order.objects.filter(customer=user)
 
@@ -89,6 +89,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except Product.DoesNotExist:
+            return Response({'error': 'Invalid product ID'}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response(
@@ -102,9 +104,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         try:
-            # Validate permissions and data
-
-            # Perform the update
             updated_order = OrderService.update_order(
                 order=order,
                 user=request.user,

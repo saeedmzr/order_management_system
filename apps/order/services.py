@@ -97,7 +97,8 @@ class OrderService:
                 total_price = 0
                 for item_data in data['items']:
                     try:
-                        product = item_data['product']
+                        processed_item = cls.process_product_item(item_data)
+                        product = processed_item['product']
                     except Product.DoesNotExist:
                         raise ValueError(f"Product with ID {item_data['product_id']} does not exist")
 
@@ -125,5 +126,5 @@ class OrderService:
     @staticmethod
     def _validate_status_update(new_status, user):
         """Validate status changes based on user permissions"""
-        if new_status == 'COMPLETED' and not user.is_staff:
+        if new_status == 'COMPLETED' and not user.is_admin:
             raise PermissionDenied("Only admin can complete orders.")
