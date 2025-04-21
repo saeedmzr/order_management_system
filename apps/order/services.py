@@ -1,9 +1,11 @@
 from django.db import transaction
+from rest_framework.exceptions import PermissionDenied
+
 from apps.product.models import Product
 from .models import Order, OrderItem
 
 
-class OrderCreationService:
+class OrderService:
     @staticmethod
     def validate_products_data(products_data):
         if not products_data:
@@ -61,3 +63,61 @@ class OrderCreationService:
                 )
 
             return order
+
+    @classmethod
+    def update_order(cls,order,user,data):
+        """
+        Updates an order with proper permission checks
+        Args:
+            order: Order instance to update
+            user: User making the request
+            data: Dictionary containing update data (status, items)
+        Returns:
+            Updated order instance
+        Raises:
+            PermissionDenied: If user doesn't have permission
+            ValueError: For invalid data
+        """
+        # Permission checks
+        if not user.is_staff and order.customer != user:
+            raise PermissionDenied("You can only update your own orders.")
+
+        # Status update validation
+        if 'status' in data:
+            OrderService._validate_status_update(data['status'], user)
+            order.status = data['status']
+
+        with transaction.atomic():
+            order.items.all().delete()
+            total_price = 0
+            for item_data in data['items']:
+                try:
+                    product = item_data['product']
+                except Product.DoesNotExist:
+                    raise ValueError(f"Product with ID {item_data['product_id']} does not exist")
+
+                quantity = item_data['quantity']
+                if quantity < 1:
+                    raise ValueError("Quantity must be at least 1")
+
+                price = product.price * quantity
+                total_price += price
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                    price=product.price
+                )
+
+            order.total_price = total_price
+
+            order.save()
+
+        return order
+
+    @staticmethod
+    def _validate_status_update(new_status, user):
+        """Validate status changes based on user permissions"""
+        if new_status == 'COMPLETED' and not user.is_staff:
+            raise PermissionDenied("Only admin can complete orders.")

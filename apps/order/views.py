@@ -2,14 +2,16 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework import viewsets, filters, status
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Order, OrderItem
-from .serializers import OrderSerializer, OrderItemSerializer, OrderCreateSerializer
+from .serializers import OrderSerializer, OrderItemSerializer, OrderCreateSerializer, OrderUpdateSerializer
 from .permissions import IsOrderOwnerOrAdmin
 from .filters import OrderFilter
-from .services import OrderCreationService
+from .services import  OrderService
 from ..base.responses import Response
+from ..product.models import Product
 
 
 @extend_schema(tags=['Orders Endpoints'])
@@ -75,7 +77,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             serialized_data = OrderCreateSerializer(data=request.data)
             serialized_data.is_valid(raise_exception=True)
 
-            order = OrderCreationService.create_order(
+            order = OrderService.create_order(
                 user=request.user,
                 products_data=serialized_data.validated_data.get("items",[]))
 
@@ -93,3 +95,34 @@ class OrderViewSet(viewsets.ModelViewSet):
                 {'error': 'Order creation failed'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def update(self, request, *args, **kwargs):
+        order = self.get_object()
+        serializer = OrderUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            # Validate permissions and data
+
+            # Perform the update
+            updated_order = OrderService.update_order(
+                order=order,
+                user=request.user,
+                data=serializer.validated_data
+            )
+
+            # Return the updated order
+            return Response({
+                'status': updated_order.status,
+                'total_price': updated_order.total_price,
+                'message': 'Order updated successfully'
+            }, status=status.HTTP_200_OK)
+
+        except PermissionDenied as e:
+            return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Product.DoesNotExist:
+            return Response({'error': 'Invalid product ID'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

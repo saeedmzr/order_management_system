@@ -17,7 +17,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['product__name', 'quantity', 'price']
+        fields = ['product','product_id', 'quantity', 'price']
         read_only_fields = ['price']
 
 
@@ -60,51 +60,3 @@ class OrderUpdateSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['status', 'items']
         read_only_fields = ['customer']
-
-    def validate(self, data):
-        request = self.context['request']
-        order = self.instance
-        user = request.user
-
-        # Users can only update their own orders
-        if not user.is_staff and order.customer != user:
-            raise serializers.ValidationError("You can only update your own orders.")
-
-        # Only admin can change status to COMPLETED
-        if 'status' in data and data['status'] == 'COMPLETED' and not user.is_staff:
-            raise serializers.ValidationError("Only admin can complete orders.")
-
-        return data
-
-    def update(self, instance, validated_data):
-        request = self.context['request']
-        items_data = validated_data.pop('items', None)
-
-        # Update status if provided
-        if 'status' in validated_data:
-            instance.status = validated_data['status']
-
-        # Update items if provided
-        if items_data is not None:
-            # Clear existing items
-            instance.items.all().delete()
-
-            # Create new items
-            total_price = 0
-            for item_data in items_data:
-                product = item_data['product']
-                quantity = item_data['quantity']
-                price = product.price * quantity
-                total_price += price
-
-                OrderItem.objects.create(
-                    order=instance,
-                    product=product,
-                    quantity=quantity,
-                    price=product.price
-                )
-
-            instance.total_price = total_price
-
-        instance.save()
-        return instance
