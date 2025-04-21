@@ -44,38 +44,6 @@ services:
     networks:
       - web
 
-  celery-worker:
-    build:
-      context: .
-    command: celery -A order_management worker --loglevel=info
-    env_file:
-      - .env
-    depends_on:
-      - web
-    networks:
-      - web
-
-  celery-beat:
-    build:
-      context: .
-    command: celery -A order_management beat --loglevel=info
-    env_file:
-      - .env
-    depends_on:
-      - web
-    networks:
-      - web
-
-  flower:
-    image: mher/flower
-    command: celery -A order_management flower
-    ports:
-      - '5555:5555'
-    depends_on:
-      - celery-worker
-    networks:
-      - web
-
 volumes:
   postgres_data:
 

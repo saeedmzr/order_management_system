@@ -76,6 +76,8 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'apps.users',
+    'apps.order',
+    'apps.product',
     # custom apps go here
 ]
 
