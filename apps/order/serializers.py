@@ -1,8 +1,9 @@
 # orders/serializers.py
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework import serializers
 from .models import Order, OrderItem
+from ..base.exceptions import NotEnoughStock
 from ..product.models import Product
 from ..product.serializers import ProductSerializer
 from ..users.serializers import UserSerializer
@@ -41,7 +42,7 @@ class OrderItemCreateSerializer(serializers.ModelSerializer):
             raise ValidationError("Quantity must be at least 1")
 
         if product.quantity < quantity:
-            raise ValidationError(
+            raise NotEnoughStock(
                 f"Not enough stock. Only {product.quantity} available"
             )
 
@@ -85,7 +86,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        user = self.context['request'].user
+        user = self.context['request']
 
         with transaction.atomic():
             # Validate all items first
@@ -145,7 +146,7 @@ class OrderUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
-        user = self.context['request'].user
+        user = self.context['request']
 
         with transaction.atomic():
             if items_data is not None:

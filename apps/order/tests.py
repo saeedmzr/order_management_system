@@ -61,11 +61,13 @@ class OrderViewSetTests(APITestCase):
         self.product1 = Product.objects.create(
             name='لپ‌تاپ',
             price=15000000,
+            quantity=100,
             description="test",
         )
         self.product2 = Product.objects.create(
             name='موبایل',
             price=8000000,
+            quantity=100,
             description="test",
         )
         # Create users

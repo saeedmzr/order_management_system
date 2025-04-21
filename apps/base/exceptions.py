@@ -21,3 +21,9 @@ class PermissionDeniedError(CustomException):
     def __init__(self, message="You do not have the required permissions to perform this action. Please contact "
                                "support if you believe this is an error."):
         super().__init__(message, status_code=403)
+
+class NotEnoughStock(CustomException):
+    """Raised when a resource is not found."""
+
+    def __init__(self, message="We dont have enough stock for this product."):
+        super().__init__(message, status_code=400)

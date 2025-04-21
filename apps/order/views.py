@@ -10,6 +10,7 @@ from .serializers import OrderSerializer, OrderItemSerializer, OrderCreateSerial
 from .permissions import IsOrderOwnerOrAdmin
 from .filters import OrderFilter
 from .services import  OrderService
+from ..base.exceptions import NotEnoughStock
 from ..base.responses import Response
 from ..product.models import Product
 
@@ -80,11 +81,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
             serializer = self.get_serializer(order)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except serializers.ValidationError as e:
+        except ValidationError as e:
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except NotEnoughStock as e:
+            return Response({'error': str(e)}, status=e.status_code)
         except Exception as e:
             return Response(
                 {'error': 'Order creation failed'},
@@ -106,7 +109,9 @@ class OrderViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_200_OK)
         except PermissionDenied as e:
             return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
-        except serializers.ValidationError as e:
+        except NotEnoughStock as e:
+            return Response({'error': str(e)}, status=e.status_code)
+        except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

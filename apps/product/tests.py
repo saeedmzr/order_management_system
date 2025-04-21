@@ -15,7 +15,9 @@ class ProductModelTests(TestCase):
         product = Product.objects.create(
             name=simple_product_name,
             description='product description 1',
-            price=15000000
+            price=15000000,
+            quantity=100,
+
         )
         self.assertEqual(product.name, simple_product_name)
         self.assertEqual(product.price, 15000000)
@@ -27,6 +29,7 @@ class ProductViewSetTests(APITestCase):
             name='product test',
             description='product test description',
             price=15000000,
+            quantity=100,
         )
 
         # Create users with different roles
@@ -56,6 +59,7 @@ class ProductViewSetTests(APITestCase):
         data = {
             'name': 'موبایل',
             'price': 8000000,
+            'quantity': 100,
             'description': "product test description"
         }
         response = self.client.post(url, data, format='json')
@@ -68,7 +72,9 @@ class ProductViewSetTests(APITestCase):
         data = {
             'name': 'موبایل',
             'price': 8000000,
-            'description': "product test description"
+            'description': "product test description",
+            "quantity" : "100",
+
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
