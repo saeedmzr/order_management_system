@@ -43,3 +43,50 @@ class OrderViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Automatically assign the current user as the order customer."""
         serializer.save(customer=self.request.user)
+    @extend_schema(
+        request=OpenApiTypes.OBJECT,
+        examples=[
+            OpenApiExample(
+                'Order Creation Example',
+                value={
+                    'products': [
+                        {'product_id': 1, 'quantity': 2},
+                        {'product_id': 3, 'quantity': 1}
+                    ]
+                }
+            )
+        ]
+    )
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new order with multiple products.
+        Expected payload format:
+        {
+            "products": [
+                {"product_id": 1, "quantity": 2},
+                {"product_id": 3, "quantity": 1}
+            ]
+        }
+        """
+        try:
+            validated_data = OrderCreateSerializer(data=request.data)
+            validated_data.is_valid(raise_exception=True)
+
+            order = OrderCreationService.create_order(
+                user=request.user,
+                products_data=validated_data)
+
+            serializer = self.get_serializer(order)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        except Exception as e:
+            return Response(
+                {'error': 'Order creation failed'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
