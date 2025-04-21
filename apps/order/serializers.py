@@ -17,7 +17,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_id', 'quantity', 'price']
+        fields = ['product__name', 'quantity', 'price']
         read_only_fields = ['price']
 
 
@@ -53,39 +53,58 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['items']
 
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        order = Order.objects.create(
-            customer=self.context['request'].user,
-            status='PENDING'
-        )
-
-        total_price = 0
-        for item_data in items_data:
-            product = item_data['product']
-            quantity = item_data['quantity']
-            price = product.price * quantity
-            total_price += price
-
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=quantity,
-                price=product.price
-            )
-
-        order.total_price = total_price
-        order.save()
-        return order
-
-
 class OrderUpdateSerializer(serializers.ModelSerializer):
+    items = OrderItemCreateSerializer(many=True, required=False)
+
     class Meta:
         model = Order
-        fields = ['status']
+        fields = ['status', 'items']
+        read_only_fields = ['customer']
 
-    def validate_status(self, value):
-        user = self.context['request'].user
-        if value == 'COMPLETED' and not user.is_staff:
+    def validate(self, data):
+        request = self.context['request']
+        order = self.instance
+        user = request.user
+
+        # Users can only update their own orders
+        if not user.is_staff and order.customer != user:
+            raise serializers.ValidationError("You can only update your own orders.")
+
+        # Only admin can change status to COMPLETED
+        if 'status' in data and data['status'] == 'COMPLETED' and not user.is_staff:
             raise serializers.ValidationError("Only admin can complete orders.")
-        return value
+
+        return data
+
+    def update(self, instance, validated_data):
+        request = self.context['request']
+        items_data = validated_data.pop('items', None)
+
+        # Update status if provided
+        if 'status' in validated_data:
+            instance.status = validated_data['status']
+
+        # Update items if provided
+        if items_data is not None:
+            # Clear existing items
+            instance.items.all().delete()
+
+            # Create new items
+            total_price = 0
+            for item_data in items_data:
+                product = item_data['product']
+                quantity = item_data['quantity']
+                price = product.price * quantity
+                total_price += price
+
+                OrderItem.objects.create(
+                    order=instance,
+                    product=product,
+                    quantity=quantity,
+                    price=product.price
+                )
+
+            instance.total_price = total_price
+
+        instance.save()
+        return instance
