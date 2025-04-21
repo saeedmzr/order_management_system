@@ -79,40 +79,46 @@ class OrderService:
             ValueError: For invalid data
         """
         # Permission checks
-        if not user.is_staff and order.customer != user:
+        if not user.is_admin and order.customer != user:
             raise PermissionDenied("You can only update your own orders.")
+
 
         # Status update validation
         if 'status' in data:
+            if not user.is_admin :
+                raise PermissionDenied("Access denied.")
+
             OrderService._validate_status_update(data['status'], user)
             order.status = data['status']
 
         with transaction.atomic():
-            order.items.all().delete()
-            total_price = 0
-            for item_data in data['items']:
-                try:
-                    product = item_data['product']
-                except Product.DoesNotExist:
-                    raise ValueError(f"Product with ID {item_data['product_id']} does not exist")
+            if data.get("items") and data.get("items") > 0:
+                order.items.all().delete()
+                total_price = 0
+                for item_data in data['items']:
+                    try:
+                        product = item_data['product']
+                    except Product.DoesNotExist:
+                        raise ValueError(f"Product with ID {item_data['product_id']} does not exist")
 
-                quantity = item_data['quantity']
-                if quantity < 1:
-                    raise ValueError("Quantity must be at least 1")
+                    quantity = item_data['quantity']
+                    if quantity < 1:
+                        raise ValueError("Quantity must be at least 1")
 
-                price = product.price * quantity
-                total_price += price
+                    price = product.price * quantity
+                    total_price += price
 
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=quantity,
-                    price=product.price
-                )
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=quantity,
+                        price=product.price
+                    )
 
-            order.total_price = total_price
+                order.total_price = total_price
 
-            order.save()
+        order.save()
+
 
         return order
 

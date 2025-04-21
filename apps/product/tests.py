@@ -1,5 +1,5 @@
 from django.test import TestCase
-from apps.product.models import Product, Category
+from apps.product.models import Product
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework import status
@@ -8,11 +8,6 @@ from apps.users.models import User
 
 
 class ProductModelTests(TestCase):
-    def setUp(self):
-        self.category = Category.objects.create(
-            name='الکترونیکی',
-            description='دسته‌بندی محصولات الکترونیکی'
-        )
 
     def test_create_product(self):
         simple_product_name = "product test"
@@ -20,11 +15,9 @@ class ProductModelTests(TestCase):
         product = Product.objects.create(
             name=simple_product_name,
             description='product description 1',
-            price=15000000,
-            category=self.category
+            price=15000000
         )
         self.assertEqual(product.name, simple_product_name)
-        self.assertEqual(product.category.name, simple_product_description)
         self.assertEqual(product.price, 15000000)
 
 
@@ -38,26 +31,28 @@ class ProductViewSetTests(APITestCase):
 
         # Create users with different roles
         self.admin = User.objects.create_superuser(
-            username='admin',
+            username='admin1',
+            email="admin@admin.com",
             password='adminpass',
             is_admin=True
         )
 
         self.customer = User.objects.create_user(
-            username='customer',
+            username='customer1',
+            email="user@admin.com",
             password='customerpass',
             is_admin=False
         )
 
     def test_product_list(self):
-        url = reverse('products')
+        url = "/api/products/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
     def test_product_create_as_admin(self):
         self.client.force_authenticate(user=self.admin)
-        url = reverse('products')
+        url = "/api/products/"
         data = {
             'name': 'موبایل',
             'price': 8000000,
@@ -69,7 +64,7 @@ class ProductViewSetTests(APITestCase):
 
     def test_product_create_as_customer(self):
         self.client.force_authenticate(user=self.customer)
-        url = reverse('product-list')
+        url = "/api/products/"
         data = {
             'name': 'موبایل',
             'price': 8000000,
